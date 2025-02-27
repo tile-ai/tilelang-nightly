@@ -39,11 +39,12 @@ jobs:
           pushd tilelang
           version="$(cat VERSION)+$(git rev-parse HEAD | cut -c1-7)"
           sed -i "0,/return version/ s#return version#return '${version}'#" setup.py
-          cat setup.py
           
           ## only build py310 version.
           sed 's/tox_command="python3.8 -m tox -e py3[^"]*/tox_command="python3.8 -m tox -e py39,py310/' maint/scripts/docker_local_distribute.sh
-  
+          ## config docker mirror
+          sed 's/IMAGE=nvidia/cuda:12.1.0-devel-ubuntu18.04/IMAGE=docker-0.unsee.tech/nvidia/cuda:12.1.0-devel-ubuntu18.04/' maint/scripts/docker_local_distribute.sh
+          
           echo "VERSION=$version" >> $GITHUB_ENV
           echo "version=$version" >> $GITHUB_OUTPUT
         id: get_version
