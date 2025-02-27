@@ -41,7 +41,7 @@ jobs:
           sed -i "0,/return version/ s#return version#return '${version}'#" setup.py
           sed -i 's/= f"+/= f"./' setup.py
           ## only build py310 version.
-          sed -i 's/tox_command="python3.8 -m tox -e py3[^"]*/tox_command="python3.8 -m tox -e py39,py310/' maint/scripts/docker_local_distribute.sh
+          sed -i 's/tox_command="python3.8 -m tox -e py3[^"]*/tox_command="python3.8 -m tox -e py39/' maint/scripts/docker_local_distribute.sh
           ## config docker mirror
           sed -i 's#IMAGE=nvidia/cuda:12.1.0-devel-ubuntu18.04#IMAGE=docker-0.unsee.tech/nvidia/cuda:12.1.0-devel-ubuntu18.04#' maint/scripts/docker_local_distribute.sh
           
