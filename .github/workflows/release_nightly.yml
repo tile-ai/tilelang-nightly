@@ -34,9 +34,7 @@ jobs:
           fi
 
       - run: |
-          rm -rf nightly
-          mkdir nightly
-          pushd nightly
+          rm -rf tilelang
           git clone -b ${{ env.BRANCH }} --recursive https://github.com/${{ env.REPO }}
           pushd tilelang
           version="$(cat VERSION)" + "$(git rev-parse HEAD | cut -c1-7)"
@@ -51,14 +49,14 @@ jobs:
         id: get_version
       - name: Build wheel
         run: |
-          pushd nightly/tilelang
+          pushd tilelang
           bash ./maint/scripts/docker_local_distribute.sh
           popd
-      - run: du -h nightly/tilelang/dist/*
+      - run: du -h tilelang/dist/*
       - uses: actions/upload-artifact@v4
         with:
           name: wheel
-          path: nightly/tilelang/dist/*
+          path: tilelang/dist/*
 
   release:
     needs: build
