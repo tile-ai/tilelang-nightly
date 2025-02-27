@@ -36,7 +36,7 @@ jobs:
           fi
 
       - run: |
-          sudo rm -rf tilelang
+          # sudo rm -rf tilelang
           git clone -b ${{ env.BRANCH }} --recursive https://github.com/${{ env.REPO }}
           pushd tilelang
           version="$(cat VERSION)+$(git rev-parse HEAD | cut -c1-7)"
@@ -78,7 +78,7 @@ jobs:
           tag_name: ${{ env.TAG_VERSION }}
           files: dist/*
       - name: Clone wheel index
-        run: git clone https://oauth2:${WHL_TOKEN}@github.com/tile-ai/whl.git tilelang-whl
+        run: git clone https://$WHL_TOKEN@github.com/tile-ai/whl.git tilelang-whl
         env:
           WHL_TOKEN: ${{ secrets.WHL_TOKEN }}
   
@@ -92,4 +92,4 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "update nightly whl"
-          git push
+          git push https://$WHL_TOKEN@github.com/tile-ai/whl.git main
