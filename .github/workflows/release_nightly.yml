@@ -18,8 +18,8 @@ jobs:
       version: ${{ steps.get_version.outputs.version }}
     runs-on: [self-hosted]
     steps:
-      - name: Clean tilelang
-        run: sudo rm -rf tilelang
+      - run: sudo rm -rf tilelang
+      
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Set default values
