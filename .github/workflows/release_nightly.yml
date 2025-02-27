@@ -1,0 +1,78 @@
+name: Nightly-Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: "repo"
+        default: "tile-ai/tilelang"
+      branch:
+        description: "branch"
+        default: "main"
+  schedule:
+    - cron: '0 2 * * *'
+
+jobs:
+  build:
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    runs-on: [self-hosted]
+    steps:
+      - name: Set default values
+        id: set_defaults
+        run: |
+          echo "[INFO] Event name is '${{ github.event_name }}'"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "REPO=${{ inputs.repo }}" >> $GITHUB_ENV
+            echo "BRANCH=${{ inputs.branch }}" >> $GITHUB_ENV
+          elif [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "REPO=tile-ai/tilelang" >> $GITHUB_ENV
+            echo "BRANCH=main" >> $GITHUB_ENV
+          else
+            echo "[ERROR] Unsupported event '${{ github.event_name }}'." >&2
+            exit 1
+          fi
+
+      - run: |
+          rm -rf nightly
+          git clone -b ${{ env.BRANCH }} --recursive https://github.com/${{ env.REPO }}
+          mkdir nightly
+          pushd nightly
+          git clone -b ${{ env.BRANCH }} --recursive https://github.com/${{ env.REPO }}
+          pushd tilelang
+          version="$(cat VERSION)" + "$(git rev-parse HEAD | cut -c1-7)"
+          sed -i "0,/return version/ s#return version#return '${version}'#" setup.py
+          cat setup.py
+          echo "VERSION=$version" >> $GITHUB_ENV
+          echo "version=$version" >> $GITHUB_OUTPUT
+        id: get_version
+      - name: Build wheel
+        run: |
+          pushd nightly/tilelang
+          bash ./maint/scripts/docker_local_distribute.sh
+          popd
+      - run: du -h nightly/tilelang/dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel
+          path: nightly/tilelang/dist/*
+
+  release:
+    needs: build
+    runs-on: [self-hosted]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist/
+          merge-multiple: true
+          pattern: wheel*
+      - run: ls -lah dist/
+      - run: |
+          version="${{ needs.build.outputs.version }}"
+          tag_version=$(echo $version | sed 's/\.cu[0-9.]*torch[0-9.]*$//')
+          echo "TAG_VERSION=$tag_version" >> $GITHUB_ENV
+          find dist -type f ! -name "*${tag_version}*" -delete
+      - uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.TAG_VERSION }}
+          files: dist/*
