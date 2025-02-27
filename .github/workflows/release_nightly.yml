@@ -34,28 +34,31 @@ jobs:
           fi
 
       - run: |
-          rm -rf nightly
-          git clone -b ${{ env.BRANCH }} --recursive https://github.com/${{ env.REPO }}
-          mkdir nightly
-          pushd nightly
-          git clone -b ${{ env.BRANCH }} --recursive https://github.com/${{ env.REPO }}
+          if [ -d "tilelang" ]; then
+              pushd tilelang
+              git pull
+              git submodule update --recursive --remote
+              popd
+          else
+            git clone -b ${{ env.BRANCH }} --recursive https://github.com/${{ env.REPO }}
+          fi
           pushd tilelang
-          version="$(cat VERSION)" + "$(git rev-parse HEAD | cut -c1-7)"
+          version="$(cat VERSION)+$(git rev-parse HEAD | cut -c1-7)"
           sed -i "0,/return version/ s#return version#return '${version}'#" setup.py
-          cat setup.py
+          sed -i 's/= f"+/= f"./' setup.py
           echo "VERSION=$version" >> $GITHUB_ENV
           echo "version=$version" >> $GITHUB_OUTPUT
         id: get_version
       - name: Build wheel
         run: |
-          pushd nightly/tilelang
+          pushd tilelang
           bash ./maint/scripts/docker_local_distribute.sh
           popd
-      - run: du -h nightly/tilelang/dist/*
+      - run: du -h tilelang/dist/*
       - uses: actions/upload-artifact@v4
         with:
           name: wheel
-          path: nightly/tilelang/dist/*
+          path: tilelang/dist/*
 
   release:
     needs: build
@@ -69,7 +72,7 @@ jobs:
       - run: ls -lah dist/
       - run: |
           version="${{ needs.build.outputs.version }}"
-          tag_version=$(echo $version | sed 's/\.cu[0-9.]*torch[0-9.]*$//')
+          tag_version=$version
           echo "TAG_VERSION=$tag_version" >> $GITHUB_ENV
           find dist -type f ! -name "*${tag_version}*" -delete
       - uses: softprops/action-gh-release@v1
