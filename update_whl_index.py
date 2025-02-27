@@ -2,6 +2,7 @@ import hashlib
 import pathlib
 import re
 import argparse
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--mode", type=str, default="nightly")
@@ -15,20 +16,22 @@ pattern = re.compile(
 )
 base_path = "tilelang-whl/nightly"
 vvver = " Nightly"
+star = "*"
 
 if args.mode != "nightly":
     vvver = ""
-    ...
-
-with (pathlib.Path(base_path) / "index.html").open("w") as f:
+    base_path = "tilelang-whl"
+    base_url = "https://github.com/tile-ai/tilelang/releases/download"
+    star = "cu*"
+if args.mode == "nightly":
+    with (pathlib.Path(base_path) / "index.html").open("w") as f:
         f.write(
             """<!DOCTYPE html>
 <h1>TileLang Nightly Python Wheels</h1>\n"""
         )
-for index_dir in pathlib.Path(base_path).iterdir():
+for index_dir in pathlib.Path(base_path).glob(star):
     if index_dir.is_dir():
-        for path in index_dir.glob("*"):
-            path.unlink()
+        os.system(f"rm -rf {index_dir}")
 dir_set = set()
 for path in sorted(pathlib.Path("dist").glob("*.whl")):
         with open(path, "rb") as f:
@@ -64,12 +67,12 @@ with (pathlib.Path(base_path) / "index.html").open("a+") as f:
         f'<a href="cu{cuda_version}/">cu{cuda_version}</a><br>'
     )
 
-# 遍历tilelang-whl下的所有目录，得到目录名
 dir_list = []
 
 for index_dir in pathlib.Path("tilelang-whl").iterdir():
     if index_dir.is_dir():
-        dir_list.append(index_dir.name)
+        if index_dir.name[0] != '.':
+            dir_list.append(index_dir.name)
 dir_list.sort()
 with open("tilelang-whl/index.html", "w") as f:
     f.write(
@@ -78,4 +81,4 @@ with open("tilelang-whl/index.html", "w") as f:
     )
 for dir_name in dir_list:
     with open("tilelang-whl/index.html", "a") as f:
-        f.write(f'<a href="{dir_name}/">{dir_name}</a><br>\n')  
+        f.write(f'<a href="{dir_name}/">{dir_name}</a><br>\n')   
