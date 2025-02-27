@@ -34,14 +34,8 @@ jobs:
           fi
 
       - run: |
-          if [ -d "tilelang" ]; then
-              pushd tilelang
-              git pull
-              git submodule update --recursive --remote
-              popd
-          else
-            git clone -b ${{ env.BRANCH }} --recursive https://github.com/${{ env.REPO }}
-          fi
+          sudo rm -rf tilelang
+          git clone -b ${{ env.BRANCH }} --recursive https://github.com/${{ env.REPO }}
           pushd tilelang
           version="$(cat VERSION)+$(git rev-parse HEAD | cut -c1-7)"
           sed -i "0,/return version/ s#return version#return '${version}'#" setup.py
