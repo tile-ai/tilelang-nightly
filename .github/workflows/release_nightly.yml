@@ -18,6 +18,8 @@ jobs:
       version: ${{ steps.get_version.outputs.version }}
     runs-on: [self-hosted]
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Set default values
         id: set_defaults
         run: |
