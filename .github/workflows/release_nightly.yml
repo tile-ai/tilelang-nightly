@@ -40,6 +40,8 @@ jobs:
           version="$(cat VERSION)+$(git rev-parse HEAD | cut -c1-7)"
           sed -i "0,/return version/ s#return version#return '${version}'#" setup.py
           sed -i 's/= f"+/= f"./' setup.py
+          sed -i 's/IMAGE=nvidia\/cuda:12.1.0-devel-ubuntu18.04/IMAGE=docker-0.unsee.tech\/nvidia\/cuda:12.1.0-devel-ubuntu18.04/' maint/scripts/docker_local_distribute.sh
+          sed -i 's/tox_command="python3.8 -m tox -e py3[^"]*/tox_command="python3.8 -m tox -e py310/'
           echo "VERSION=$version" >> $GITHUB_ENV
           echo "version=$version" >> $GITHUB_OUTPUT
         id: get_version
