@@ -35,7 +35,6 @@ jobs:
 
       - run: |
           rm -rf nightly
-          git clone -b ${{ env.BRANCH }} --recursive https://github.com/${{ env.REPO }}
           mkdir nightly
           pushd nightly
           git clone -b ${{ env.BRANCH }} --recursive https://github.com/${{ env.REPO }}
@@ -69,7 +68,7 @@ jobs:
       - run: ls -lah dist/
       - run: |
           version="${{ needs.build.outputs.version }}"
-          tag_version=$(echo $version | sed 's/\.cu[0-9.]*torch[0-9.]*$//')
+          tag_version=$version
           echo "TAG_VERSION=$tag_version" >> $GITHUB_ENV
           find dist -type f ! -name "*${tag_version}*" -delete
       - uses: softprops/action-gh-release@v1
