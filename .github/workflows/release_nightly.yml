@@ -79,3 +79,19 @@ jobs:
         with:
           tag_name: ${{ env.TAG_VERSION }}
           files: dist/*
+      - name: Clone wheel index
+        run: git clone https://oauth2:${WHL_TOKEN}@github.com/tile-ai/whl.git tilelang-whl
+        env:
+          WHL_TOKEN: ${{ secrets.WHL_TOKEN }}
+  
+      - name: Update wheel index
+        run: python3 update_whl_index.py
+  
+      - name: Push wheel index
+        run: |
+          cd tilelang-whl
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "update nightly whl"
+          git push
