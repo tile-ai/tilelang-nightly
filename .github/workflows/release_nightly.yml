@@ -79,6 +79,7 @@ jobs:
         with:
           tag_name: ${{ env.TAG_VERSION }}
           files: dist/*
+          token: ${{ secrets.WHL_TOKEN }}
       - name: Clone wheel index
         run: git clone https://$WHL_TOKEN@github.com/tile-ai/whl.git tilelang-whl
         env:
