@@ -51,7 +51,9 @@ for path in sorted(pathlib.Path("dist").glob("*.whl")):
         index_dir = pathlib.Path(f"{base_path}/cu{cuda_version}")
         index_dir.mkdir(exist_ok=True)
         ver = full_version.replace("+", "%2B")
-        full_url = f"{base_url}/v{ver}/{path.name}#sha256={sha256}"
+        if args.mode != "nightly":
+            ver = 'v' + ver
+        full_url = f"{base_url}/{ver}/{path.name}#sha256={sha256}"
         if cuda_version not in dir_set:
             with (index_dir / "index.html").open("w") as f:
                 f.write(
