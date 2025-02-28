@@ -21,8 +21,7 @@ jobs:
           wget -P dist/ https://github.com/tile-ai/tilelang-nightly/releases/download/0.1.1%2Bfe02922/tilelang-0.1.1+fe02922.ubuntu.18.4.cu121-cp39-cp39-linux_x86_64.whl
       - run: ls -lah dist/
       - run: |
-          version="${{ needs.build.outputs.version }}"
-          tag_version=$version
+          tag_version=0.1.1+fe02922
           echo "TAG_VERSION=$tag_version" >> $GITHUB_ENV
           find dist -type f ! -name "*${tag_version}*" -delete
       - uses: softprops/action-gh-release@v1
