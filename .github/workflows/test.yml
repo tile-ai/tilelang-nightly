@@ -14,7 +14,6 @@ on:
 
 jobs:
   release:
-    needs: build
     runs-on: [self-hosted]
     steps:
       - run: |
