@@ -1,4 +1,4 @@
-name: Nightly-Release
+name: test
 
 on:
   workflow_dispatch:
