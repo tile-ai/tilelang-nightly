@@ -221,7 +221,7 @@ jobs:
       - name: Prepare release
         run: |
           # Get version from first wheel filename
-          version=$(ls dist/*.whl | head -1 | grep -oP 'tilelang-\K[^-]+')
+          version=$(ls dist/*.whl | head -1 | grep -oP 'tilelang-\K\d+\.\d+\.\d+(?:\.\w+)*(?:\+\w+)?')
           echo "TAG_VERSION=$version" >> $GITHUB_ENV
           echo "🏷️  Release version: $version"
           
