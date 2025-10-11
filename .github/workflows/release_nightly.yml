@@ -97,7 +97,6 @@ jobs:
         env:
           CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
           
-          # Use manylinux_2_28 (AlmaLinux 8 with GCC-13 - perfect for C++17)
           CIBW_MANYLINUX_X86_64_IMAGE: "quay.io/pypa/manylinux_2_28_x86_64"
           
           # Skip 32-bit builds and musl
@@ -140,12 +139,7 @@ jobs:
             echo 'export PATH=/usr/local/cuda/bin:$PATH' >> /etc/environment
             echo 'export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH' >> /etc/environment
             
-            # Verify GCC-13 supports C++17 (it does, and much more)
-            # gcc --version
-            # g++ --version
-            # echo "int main(){return 0;}" | g++ -std=c++17 -x c++ - -o test && echo "✓ C++17 support confirmed"
-            
-          # Repair wheels for manylinux_2_28 compatibility
+          # Repair wheels for manylinux_2_27 compatibility
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: |
             auditwheel repair -w {dest_dir} {wheel} \
               --exclude libcuda.so.1 \
@@ -153,7 +147,7 @@ jobs:
               --exclude libcudart.so.11 \
               --exclude libnvrtc.so.12 \
               --exclude libcudart.so.12 \
-              --plat manylinux_2_28_x86_64
+              --plat manylinux_2_27_x86_64
               
         working-directory: tilelang
         run: python -m cibuildwheel --output-dir ../wheelhouse
@@ -166,7 +160,7 @@ jobs:
 
       - name: Verify wheel compatibility
         run: |
-          echo "🔍 Verifying manylinux_2_28 compatibility..."
+          echo "🔍 Verifying manylinux_2_27 compatibility..."
           for wheel in wheelhouse/*.whl; do
             if [[ -f "$wheel" ]]; then
               echo "Checking: $(basename "$wheel")"
@@ -257,7 +251,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "📦 Update nightly wheels for ${{ env.TAG_VERSION }} (manylinux_2_28)"
+            git commit -m "📦 Update nightly wheels for ${{ env.TAG_VERSION }}"
             git push https://github-actions[bot]:${{ secrets.WHL_TOKEN }}@github.com/tile-ai/whl.git main
           fi
         env:
