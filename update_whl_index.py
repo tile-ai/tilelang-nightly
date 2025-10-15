@@ -11,8 +11,8 @@ base_url = "https://github.com/tile-ai/tilelang-nightly/releases/download"
 pattern = re.compile(
     r"tilelang-"
     r"((\d+\.)+\d+(?:\.post\d+)?)"
-    r"(?:\+([a-z0-9]+))?"        
-    r".*?\.cu(\d+)"                
+    r"\+cu(\d+)\." 
+    r"git([a-z0-9]+)?"                       
 )
 base_path = "tilelang-whl/nightly"
 vvver = " Nightly"
@@ -41,12 +41,10 @@ for path in sorted(pathlib.Path("dist").glob("*.whl")):
         cuda_version_ = None
         if match:
             base_version = match.group(1)
-            commit_hash = match.group(3) or "" 
-            cuda_version_ = match.group(4)  
-            full_version = base_version
-            if commit_hash:
-                full_version += "+" + commit_hash
-
+            commit_hash = match.group(4) or "" 
+            cuda_version_ = match.group(3)  
+            with open("version", "r") as f:
+                full_version = f.read()
         else:
             continue
         for cuda_version in cuda_versions:

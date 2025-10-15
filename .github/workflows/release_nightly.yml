@@ -17,7 +17,7 @@ env:
 
 jobs:
   build-wheels:
-    name: Build wheels on ${{ matrix.os }} for CUDA ${{ matrix.cuda-version }} Python ${{ matrix.python-version }}
+    name: Build wheels on ${{ matrix.os }} for CUDA ${{ matrix.cuda-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -40,51 +40,10 @@ jobs:
             echo "BRANCH=main" >> $GITHUB_ENV
           fi
 
-      - name: Prepare CUDA toolkits cache
-        run: |
-          # Create cache directory on self-hosted runner
-          CUDA_CACHE_DIR="../../cache/cuda-toolkits-cache"
-          mkdir -p "$CUDA_CACHE_DIR"
-
-          pushd $CUDA_CACHE_DIR
-          echo "CUDA_CACHE_DIR=$(pwd)" >> $GITHUB_ENV
-          
-          # Download CUDA toolkits if not already cached
-          if [[ ! -f "$CUDA_CACHE_DIR/cuda_11.8.0_520.61.05_linux.run" ]]; then
-            echo "📥 Downloading CUDA 11.8 to cache..."
-            wget -q https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda_11.8.0_520.61.05_linux.run
-            echo "✅ CUDA 11.8 cached"
-          else
-            echo "🎯 CUDA 11.8 already cached"
-          fi
-          
-          if [[ ! -f "$CUDA_CACHE_DIR/cuda_12.1.0_530.30.02_linux.run" ]]; then
-            echo "📥 Downloading CUDA 12.1 to cache..."
-            wget -q https://developer.download.nvidia.com/compute/cuda/12.1.0/local_installers/cuda_12.1.0_530.30.02_linux.run
-            echo "✅ CUDA 12.1 cached"
-          else
-            echo "🎯 CUDA 12.1 already cached"
-          fi
-
-          popd
-          
-          echo "📋 Cache contents:"
-          ls -la "$CUDA_CACHE_DIR"
-
       - name: Clone and prepare source
         run: |
           git clone -b ${{ env.BRANCH }} --recursive https://github.com/${{ env.REPO }}
-          cd tilelang
           
-          # Generate version with commit hash
-          version="$(cat VERSION)+$(git rev-parse HEAD | cut -c1-7)"
-          echo "VERSION=$version" >> $GITHUB_ENV
-          
-          # Update setup.py for nightly build
-          sed -i "s/find_version(get_path(\".\", \"VERSION\"))/'${version}'/" setup.py
-          sed -i "/if with_commit_id:/s/with_commit_id/False/" setup.py
-          sed -i "0,/version += f\"+/s/\"+/\"./" setup.py
-          sed -i 's|"Ninja",|"Ninja", "-DCMAKE_C_COMPILER=/opt/rh/gcc-toolset-11/root/usr/bin/cc", "-DCMAKE_CXX_COMPILER=/opt/rh/gcc-toolset-11/root/usr/bin/c++", "-DCMAKE_CUDA_HOST_COMPILER=/opt/rh/gcc-toolset-11/root/usr/bin/c++"|' setup.py
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -93,69 +52,18 @@ jobs:
       - name: Install cibuildwheel
         run: python -m pip install cibuildwheel
 
-      - name: Build wheels with cibuildwheel
+      - name: Build wheels
+        run: | 
+          cd tilelang
+          cibuildwheel --output-dir ../wheelhouse
         env:
-          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
-          
-          CIBW_MANYLINUX_X86_64_IMAGE: "quay.io/pypa/manylinux_2_28_x86_64"
-          
-          # Skip 32-bit builds and musl
-          CIBW_SKIP: "*-win32 *-manylinux_i686 *-musllinux*"
-          
-          # Set CUDA version for this matrix job
-          CIBW_ENVIRONMENT: |
-            CUDA_VERSION=${{ matrix.cuda-version }}
-            CUDACXX=/usr/local/cuda-${{ matrix.cuda-version }}/bin/nvcc
-            http_proxy=http://10.129.167.171:7897
-            https_proxy=http://10.129.167.171:7897
-            
-          # Install CUDA in the manylinux_2_28 environment using cached toolkits
-          CIBW_BEFORE_BUILD: |
-            # Update system and install dependencies
-            export http_proxy=http://10.129.167.171:7897 https_proxy=http://10.129.167.171:7897
-            dnf update -y
-            dnf install -y gcc-toolset-11 ninja-build
-            source /opt/rh/gcc-toolset-11/enable
-
-            mkdir -p /etc
-            echo "[global]" > /etc/pip.conf
-            echo "proxy = http://10.129.167.171:7897" >> /etc/pip.conf
-            
-            # read github actions env
-            CUDA_CACHE_DIR=${{ env.CUDA_CACHE_DIR }}
-            echo "CUDA_CACHE_DIR=$CUDA_CACHE_DIR"
-
-            if [[ "${{ matrix.cuda-version }}" == "11.8" ]]; then
-              echo "📦 Installing CUDA 11.8 from cached installer..."
-              sh /host$CUDA_CACHE_DIR/cuda_11.8.0_520.61.05_linux.run --toolkit --silent --override --no-man-page
-
-            elif [[ "${{ matrix.cuda-version }}" == "12.1" ]]; then
-              echo "📦 Installing CUDA 12.1 from cached installer..."
-              sh /host$CUDA_CACHE_DIR/cuda_12.1.0_530.30.02_linux.run --toolkit --silent --override --no-man-page
-            fi
-                        
-            # Set up CUDA environment
-            ln -sf /usr/local/cuda-${{ matrix.cuda-version }} /usr/local/cuda
-            echo 'export PATH=/usr/local/cuda/bin:$PATH' >> /etc/environment
-            echo 'export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH' >> /etc/environment
-            
-          # Repair wheels for manylinux_2_27 compatibility
-          CIBW_REPAIR_WHEEL_COMMAND_LINUX: |
-            auditwheel repair -w {dest_dir} {wheel} \
-              --exclude libcuda.so.1 \
-              --exclude libnvrtc.so.11 \
-              --exclude libcudart.so.11 \
-              --exclude libnvrtc.so.12 \
-              --exclude libcudart.so.12 \
-              --plat manylinux_2_27_x86_64
-              
-        working-directory: tilelang
-        run: python -m cibuildwheel --output-dir ../wheelhouse
+          CUDA_VERSION: ${{ matrix.cuda-version }}
+          CIBW_SKIP: "cp3??t-* *musllinux*"
 
       - name: Upload wheels as artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-cuda-${{ matrix.cuda-version }}-py${{ matrix.python-version }}
+          name: wheels-cuda-${{ matrix.cuda-version }}
           path: wheelhouse/*.whl
 
       - name: Verify wheel compatibility
@@ -215,7 +123,7 @@ jobs:
       - name: Prepare release
         run: |
           # Get version from first wheel filename
-          version=$(ls dist/*.whl | head -1 | grep -oP 'tilelang-\K\d+\.\d+\.\d+(?:\.\w+)*(?:\+\w+)?')
+          version=$(python3 get_verison.py > version | cat)
           echo "TAG_VERSION=$version" >> $GITHUB_ENV
           echo "🏷️  Release version: $version"
           
@@ -228,14 +136,6 @@ jobs:
           prerelease: true
           body: |
             🚀 **TileLang Nightly Build** - ${{ env.TAG_VERSION }}
-            
-            Built with:
-            - 🐧 **manylinux_2_28** (AlmaLinux 8, GCC-13)
-            - 🐍 **Python 3.8-3.12** support
-            - 🎯 **CUDA 11.8, 12.1, 12.4** support
-            - ⚡ **C++17** standard compliance
-            
-            Compatible with: Ubuntu 18.10+, Debian 10+, CentOS/RHEL 8+, Fedora 29+
           
       - name: Update wheel index
         run: |
