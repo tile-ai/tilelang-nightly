@@ -55,10 +55,11 @@ jobs:
       - name: Build wheels
         run: | 
           cd tilelang
+          sed -i 's/manylinux2014/manylinux_2_28/' pyproject.toml
           cibuildwheel --output-dir ../wheelhouse
         env:
           CUDA_VERSION: ${{ matrix.cuda-version }}
-          CIBW_SKIP: "cp38-* cp3??t-* *musllinux*"
+          CIBW_SKIP: "cp3??t-* *musllinux*"
 
       - name: Upload wheels as artifacts
         uses: actions/upload-artifact@v4
