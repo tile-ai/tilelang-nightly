@@ -37,19 +37,11 @@ cuda_versions = list(range(121, 129))
 for path in sorted(pathlib.Path("dist").glob("*.whl")):
         with open(path, "rb") as f:
             sha256 = hashlib.sha256(f.read()).hexdigest()
-        match = pattern.search(path.name)
-        cuda_version_ = None
-        if match:
-            base_version = match.group(1)
-            commit_hash = match.group(4) or "" 
-            cuda_version_ = match.group(3)  
-            with open("version", "r") as f:
-                full_version = f.read()
-        else:
-            continue
+
+        with open("version", "r") as f:
+            full_version = f.read()
+
         for cuda_version in cuda_versions:
-            if cuda_version_ == "118":
-                cuda_version = "118"
             index_dir = pathlib.Path(f"{base_path}/cu{cuda_version}")
             index_dir.mkdir(exist_ok=True)
             ver = full_version.replace("+", "%2B")
@@ -69,8 +61,7 @@ for path in sorted(pathlib.Path("dist").glob("*.whl")):
                 dir_set.add(cuda_version)
             with (index_dir / "index.html").open("a") as f:
                 f.write(f'<a href="{full_url}">{path.name}</a><br>\n')
-            if cuda_version == "118":
-                break
+        break
 
 dir_list = []
 

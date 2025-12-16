@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [self-hosted]
-        cuda-version: ["12.1", "11.8"]
+        cuda-version: ["12.8"]
         
     steps:
       - name: Checkout repository
