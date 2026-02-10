@@ -59,6 +59,7 @@ jobs:
         env:
           CUDA_VERSION: ${{ matrix.cuda-version }}
           CIBW_SKIP: "cp39* cp314* cp3??t-* *musllinux*"
+          NO_VERSION_LABEL: 1
 
       - name: Upload wheels as artifacts
         uses: actions/upload-artifact@v4

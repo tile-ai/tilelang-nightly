@@ -4,9 +4,7 @@ from datetime import datetime
 
 pattern = re.compile(
     r"tilelang-"
-    r"((\d+\.)+\d+(?:\.post\d+)?)"
-    r"\+cu(\d+)\." 
-    r"git([a-z0-9]+)?"                       
+    r"((\d+\.)+\d+(?:\.post\d+)?)"                   
 )
 
 path = next(pathlib.Path("dist").glob("*.whl"))
